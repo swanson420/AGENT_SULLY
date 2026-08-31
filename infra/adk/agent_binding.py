@@ -41,7 +41,7 @@ def run_witnessed_close(fixture: str = "easy_save") -> Mapping[str, Any]:
     return _pack(witnessed_close_path(fixture))
 
 
-async def run_via_gemini(fixture: str = "easy_save"):
+async def run_via_gemini(fixture: str = "easy_save") -> str:
     """Run the root agent against a fixture through the live ADK runner."""
     session_service = InMemorySessionService()
     await session_service.create_session(
@@ -53,12 +53,19 @@ async def run_via_gemini(fixture: str = "easy_save"):
     content = types.Content(
         role="user", parts=[types.Part(text=f"Close fixture {fixture}")]
     )
-    return [
+    events = [
         event
         async for event in runner.run_async(
             user_id="demo", session_id="demo", new_message=content
         )
     ]
+    for event in reversed(events):
+        content = getattr(event, "content", None)
+        for part in getattr(content, "parts", ()) or ():
+            text = getattr(part, "text", None)
+            if text:
+                return text
+    return "no text content in final event"
 
 
 closer_agent = LlmAgent(
