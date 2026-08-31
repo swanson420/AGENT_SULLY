@@ -1,0 +1,6 @@
+-r requirements.txt
+google-adk
+google-genai
+fastapi
+uvicorn
+pytest>=7.0
