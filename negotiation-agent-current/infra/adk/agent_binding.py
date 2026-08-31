@@ -40,7 +40,7 @@ def run_witnessed_close(fixture: str = "easy_save") -> Mapping[str, Any]:
 
 closer_agent = LlmAgent(
     name="vendor_closer",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash-lite",
     description="Closes a vendor-renewal fixture through the audited ledger path.",
     instruction=(
         "Call run_vendor_close for a named fixture. "
@@ -51,7 +51,7 @@ closer_agent = LlmAgent(
 
 witness_agent = LlmAgent(
     name="witnessed_closer",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash-lite",
     description="Closes a vendor-renewal fixture on the mandatory-escalation path.",
     instruction=(
         "Call run_witnessed_close when a human acknowledgement is part of the story. "
