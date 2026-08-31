@@ -19,6 +19,10 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from action.close_path import close_path, witnessed_close_path
 from scenarios.vendor_renewal.scenario import VALID_FIXTURES
 
+# ADK/Gemini imports are deferred to the request handler (see /agent/run/{fixture})
+# so a missing google-adk install or missing Vertex/Gemini credentials fails that
+# one route instead of the whole app at import time.
+
 app = FastAPI(title="Negotiation Agent - Vendor Renewal PoV")
 
 SUBMISSION_PACK_DIR = Path(__file__).resolve().parent.parent / "submission-pack"
@@ -45,6 +49,8 @@ def index():
         <ul>{fixture_links}
           <li><a href="/demo/easy_save?witnessed=true">/demo/easy_save?witnessed=true</a></li>
         </ul>
+        <h2>Live Gemini/ADK call (actually invokes the model)</h2>
+        <ul><li><a href="/agent/run/easy_save">/agent/run/easy_save</a></li></ul>
         <h2>Frozen submission packs</h2>
         <ul><li><a href="/packs">/packs</a></li></ul>
         <p><a href="/health">/health</a></p>
@@ -62,6 +68,90 @@ def run_demo(fixture: str, witnessed: bool = False):
         )
     result = witnessed_close_path(fixture) if witnessed else close_path(fixture)
     return JSONResponse(content=json.loads(json.dumps(result.export, default=str)))
+
+
+@app.get("/agent/run/{fixture}")
+async def run_agent(fixture: str, witnessed: bool = False):
+    """Actually invoke Gemini through the ADK agent binding (infra/adk/agent_binding.py).
+
+    Distinct from /demo/{fixture}: that route calls close_path() directly.
+    This route runs the LlmAgent, which calls run_vendor_close/run_witnessed_close
+    (thin wrappers around the same close_path pipeline) as a *tool* -- so the
+    numbers are identical, but the model actually has to be reached to get them.
+    """
+    if fixture not in VALID_FIXTURES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"unknown fixture {fixture!r}; valid: {list(VALID_FIXTURES)}",
+        )
+
+    try:
+        from google.genai import types
+        from google.adk.runners import Runner
+        from google.adk.sessions import InMemorySessionService
+
+        from infra.adk.agent_binding import closer_agent, witness_agent
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"ADK not available in this deployment: {exc}",
+        ) from exc
+
+    agent = witness_agent if witnessed else closer_agent
+    app_name = "negotiation-agent-demo"
+    user_id = "demo-user"
+
+    session_service = InMemorySessionService()
+    try:
+        session = await session_service.create_session(app_name=app_name, user_id=user_id)
+        runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
+
+        prompt = f"Close the {fixture!r} fixture."
+        if witnessed:
+            prompt += " Use the witnessed/mandatory-escalation path."
+        message = types.Content(role="user", parts=[types.Part(text=prompt)])
+
+        events = []
+        final_text = None
+        async for event in runner.run_async(
+            user_id=user_id, session_id=session.id, new_message=message
+        ):
+            ev = {"author": event.author, "is_final_response": event.is_final_response()}
+            calls = event.get_function_calls()
+            responses = event.get_function_responses()
+            if calls:
+                ev["function_calls"] = [
+                    {"name": c.name, "args": dict(c.args or {})} for c in calls
+                ]
+            if responses:
+                ev["function_responses"] = [
+                    {"name": r.name, "response": r.response} for r in responses
+                ]
+            if event.content and event.content.parts:
+                texts = [p.text for p in event.content.parts if getattr(p, "text", None)]
+                if texts:
+                    ev["text"] = "".join(texts)
+                    if event.is_final_response():
+                        final_text = ev["text"]
+            events.append(ev)
+    except Exception as exc:  # surface auth/quota/model errors as evidence, not a 500 traceback dump
+        raise HTTPException(status_code=502, detail=f"Gemini/ADK call failed: {exc}") from exc
+
+    return JSONResponse(
+        content=json.loads(
+            json.dumps(
+                {
+                    "fixture": fixture,
+                    "witnessed": witnessed,
+                    "agent": agent.name,
+                    "model": agent.model,
+                    "final_response": final_text,
+                    "events": events,
+                },
+                default=str,
+            )
+        )
+    )
 
 
 @app.get("/packs")

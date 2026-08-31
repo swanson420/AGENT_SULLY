@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY negotiation-agent-current/requirements.txt negotiation-agent-current/requirements.txt
 RUN pip install --no-cache-dir -r negotiation-agent-current/requirements.txt \
-    && pip install --no-cache-dir fastapi "uvicorn[standard]"
+    && pip install --no-cache-dir fastapi "uvicorn[standard]" google-adk
 
 COPY negotiation-agent-current negotiation-agent-current
 COPY submission-pack submission-pack
