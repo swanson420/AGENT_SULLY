@@ -1,0 +1,181 @@
+{
+  "adversarial_check_scope": "synthetic_offer_text",
+  "commitment_level": 2,
+  "commitment_trigger": "none",
+  "disposition": "SETTLED",
+  "events": [
+    {
+      "event_id": "evt-baseline-1",
+      "event_type": "baseline",
+      "hash": "351ab8ad03262e345f694d757b1850eb1ee3da7199f3eb74ce52883b0ad35be7",
+      "payload": {
+        "baseline_usd": 48000,
+        "blast_radius": {
+          "commitment": "MEDIUM",
+          "cost": "MEDIUM",
+          "external_visibility": "MEDIUM",
+          "relationship_impact": "MEDIUM",
+          "reversibility": "MEDIUM"
+        },
+        "currency": "USD",
+        "event_type": "baseline",
+        "fixture": "easy_save",
+        "forbidden_terms": [
+          "multi-year-lock",
+          "auto-renew-expansion",
+          "seat-minimum-increase"
+        ],
+        "max_term_months": 12,
+        "plant": {
+          "sandbox_vendor_floor_usd": 40000,
+          "sandbox_vendor_policy": "accept_if_price_at_or_above_floor_and_term_at_or_below_required",
+          "sandbox_vendor_required_term_months": 12,
+          "scripted_counter_term_months": null,
+          "scripted_counter_usd": null
+        },
+        "raw_message": "Renew Acme Analytics Platform, 50 seats. Current spend is $48,000/year. Get it to $40,000 or below. Do not accept a term longer than 12 months. Do not accept auto-renew expansion or a seat-minimum increase.",
+        "reference": {
+          "expected_closed_usd": 40000,
+          "expected_constraint_honored": true,
+          "expected_disposition": "SETTLE",
+          "expected_savings_usd": 8000,
+          "expected_term_months": 12,
+          "forbidden_terms": [
+            "multi-year-lock",
+            "auto-renew-expansion",
+            "seat-minimum-increase"
+          ],
+          "max_closed_usd": 40000,
+          "max_term_months": 12,
+          "must_not_exceed_baseline": true
+        },
+        "scenario": "vendor-renewal",
+        "seat_count": 50,
+        "sku": "Platform",
+        "target_ceiling_usd": 40000,
+        "vendor_id": "acme-analytics",
+        "vendor_name": "Acme Analytics"
+      },
+      "prev_hash": ""
+    },
+    {
+      "event_id": "evt-offer-1",
+      "event_type": "offer",
+      "hash": "c66270b462f04cce2e020e7ddd106d58687e47ba27a581277c2ccc5c4cf91e4f",
+      "payload": {
+        "adversarial_check_scope": "synthetic_offer_text",
+        "adversarial_digest": "f497656109af04eb496bee74eed8f77ea192eb4ccde94bfbb43722b28782c233",
+        "adversarial_disposition": "PASS",
+        "adversarial_objections": [],
+        "commitment_level": 2,
+        "currency": "USD",
+        "event_type": "offer",
+        "evidence_event_ids": [
+          "evt-baseline-1"
+        ],
+        "fixture": "easy_save",
+        "offer_usd": 40000,
+        "sku": "Platform",
+        "term_months": 12,
+        "vendor_id": "acme-analytics"
+      },
+      "prev_hash": "351ab8ad03262e345f694d757b1850eb1ee3da7199f3eb74ce52883b0ad35be7"
+    },
+    {
+      "event_id": "evt-offer-sent-1",
+      "event_type": "offer_sent",
+      "hash": "86c466fd6c2a5c086b4b462dedbba0588ee4fe4d613ee7c503ae9d7d0d56dbba",
+      "payload": {
+        "channel": "sandbox_log",
+        "event_type": "offer_sent",
+        "evidence_event_ids": [
+          "evt-baseline-1",
+          "evt-offer-1"
+        ],
+        "fixture": "easy_save",
+        "message": "offer sent"
+      },
+      "prev_hash": "c66270b462f04cce2e020e7ddd106d58687e47ba27a581277c2ccc5c4cf91e4f"
+    },
+    {
+      "event_id": "evt-counterparty-reply-1",
+      "event_type": "counterparty_reply",
+      "hash": "5c43f29f7292594ac841bc01e7fcc9a2fc9759f5fec88d4a00a8d8c64fbab78c",
+      "payload": {
+        "disposition": "ACCEPT",
+        "event_type": "counterparty_reply",
+        "evidence_event_ids": [
+          "evt-baseline-1",
+          "evt-offer-1",
+          "evt-offer-sent-1"
+        ],
+        "fixture": "easy_save",
+        "offer_usd": 40000,
+        "policy": "accept_if_price_at_or_above_floor_and_term_at_or_below_required",
+        "rationale": "offer meets scripted floor and term thresholds",
+        "term_months": 12,
+        "vendor_id": "acme-analytics"
+      },
+      "prev_hash": "86c466fd6c2a5c086b4b462dedbba0588ee4fe4d613ee7c503ae9d7d0d56dbba"
+    },
+    {
+      "event_id": "evt-settlement-1",
+      "event_type": "settlement",
+      "hash": "3929771298fa0dde39883eebc87c8d8c0a93910d774eb11bd32e4875cf913628",
+      "payload": {
+        "accepted_terms": [],
+        "baseline_usd": 48000,
+        "closed_usd": 40000,
+        "constraint_honored": true,
+        "currency": "USD",
+        "event_type": "settlement",
+        "evidence_event_ids": [
+          "evt-baseline-1",
+          "evt-offer-1",
+          "evt-offer-sent-1",
+          "evt-counterparty-reply-1"
+        ],
+        "fixture": "easy_save",
+        "forbidden_terms": [
+          "multi-year-lock",
+          "auto-renew-expansion",
+          "seat-minimum-increase"
+        ],
+        "max_term_months": 12,
+        "savings_usd": 8000,
+        "sku": "Platform",
+        "target_ceiling_usd": 40000,
+        "term_months": 12,
+        "vendor_id": "acme-analytics"
+      },
+      "prev_hash": "5c43f29f7292594ac841bc01e7fcc9a2fc9759f5fec88d4a00a8d8c64fbab78c"
+    }
+  ],
+  "fixture": "easy_save",
+  "metrics": {
+    "baseline_count": 1,
+    "constraint_by_detail": {
+      "CLOSED_EXCEEDS_BASELINE": 0,
+      "CLOSED_EXCEEDS_CEILING": 0,
+      "FORBIDDEN_TERM": 0,
+      "INVALID_BASELINE": 0,
+      "INVALID_CEILING": 0,
+      "INVALID_CLOSED": 0,
+      "INVALID_MAX_TERM": 0,
+      "INVALID_TERM": 0,
+      "TERM_EXCEEDS_MAX": 0
+    },
+    "halt_by_reason": {
+      "CONSTRAINT": 0,
+      "VENDOR_COUNTER": 0,
+      "VENDOR_REJECT": 0
+    },
+    "halt_count": 0,
+    "invalid_halt_count": 0,
+    "invalid_settlement_count": 0,
+    "settlement_count": 1,
+    "total_savings_usd": 8000
+  },
+  "offer_usd": 40000,
+  "term_months": 12
+}
