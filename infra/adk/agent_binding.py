@@ -9,6 +9,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from google.adk.agents import LlmAgent, SequentialAgent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
 
 from action.close_path import close_path, witnessed_close_path
 
@@ -38,9 +41,29 @@ def run_witnessed_close(fixture: str = "easy_save") -> Mapping[str, Any]:
     return _pack(witnessed_close_path(fixture))
 
 
+async def run_via_gemini(fixture: str = "easy_save"):
+    """Run the root agent against a fixture through the live ADK runner."""
+    session_service = InMemorySessionService()
+    await session_service.create_session(
+        app_name="agent_sully", user_id="demo", session_id="demo"
+    )
+    runner = Runner(
+        agent=root_agent, app_name="agent_sully", session_service=session_service
+    )
+    content = types.Content(
+        role="user", parts=[types.Part(text=f"Close fixture {fixture}")]
+    )
+    return [
+        event
+        async for event in runner.run_async(
+            user_id="demo", session_id="demo", new_message=content
+        )
+    ]
+
+
 closer_agent = LlmAgent(
     name="vendor_closer",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash-lite",
     description="Closes a vendor-renewal fixture through the audited ledger path.",
     instruction=(
         "Call run_vendor_close for a named fixture. "
@@ -51,7 +74,7 @@ closer_agent = LlmAgent(
 
 witness_agent = LlmAgent(
     name="witnessed_closer",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash-lite",
     description="Closes a vendor-renewal fixture on the mandatory-escalation path.",
     instruction=(
         "Call run_witnessed_close when a human acknowledgement is part of the story. "
